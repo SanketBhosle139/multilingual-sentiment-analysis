@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #000000;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hindi-english {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 3rem;
+        }
+
+        .emoji-container {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .emoji {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: default;
+        }
+
+        .emoji.active {
+            transform: scale(1.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .positive { background-color: #2ECC71; }
+        .neutral { background-color: #F39C12; }
+        .negative { background-color: #E74C3C; }
+
+        .input-section {
+            margin-bottom: 2rem;
+        }
+
+        .input-label {
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+
+        .input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .tweet-input {
+            width: 100%;
+            padding: 1rem 7rem 1rem 1.5rem;
+            border-radius: 9999px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .tweet-input:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .input-icons {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.25rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .analyze-text {
+            margin-right: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .icon-button:hover {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="hindi-english">Hinglish</p>
+        <h1>Sentiment Analysis</h1>
+        <p class="subtitle">Categorises Phrases under Positive, Neutral or Negative</p>
+
+        <div class="emoji-container">
+            <div class="emoji positive" data-sentiment="positive">😊</div>
+            <div class="emoji neutral" data-sentiment="neutral">😐</div>
+            <div class="emoji negative" data-sentiment="negative">☹️</div>
+        </div>
+
+        <div class="input-section">
+            <p class="input-label">Enter the Phrase to be analysed</p>
+            <div class="input-container">
+                <input type="text" class="tweet-input" placeholder="Enter your phrase here...">
+                <div class="input-icons">
+                    <button class="icon-button clear-button hidden">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    <button class="icon-button analyze-button">
+                        <span class="analyze-text">Analyze</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tweetInput = document.querySelector('.tweet-input');
+        const clearButton = document.querySelector('.clear-button');
+        const analyzeButton = document.querySelector('.analyze-button');
+        const emojis = document.querySelectorAll('.emoji');
+
+        function highlightEmoji(sentiment) {
+            emojis.forEach(emoji => emoji.classList.remove('active'));
+            const emojiToHighlight = document.querySelector(`.emoji[data-sentiment="${sentiment}"]`);
+            if (emojiToHighlight) {
+                emojiToHighlight.classList.add('active');
+            }
+        }
+
+        function analyzeTweet() {
+            const tweet = tweetInput.value.trim();
+            if (tweet) {
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sentence: tweet })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sentiment) {
+                        highlightEmoji(data.sentiment.toLowerCase());
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        tweetInput.addEventListener('input', () => {
+            clearButton.classList.toggle('hidden', !tweetInput.value);
+        });
+
+        clearButton.addEventListener('click', () => {
+            tweetInput.value = '';
+            clearButton.classList.add('hidden');
+            emojis.forEach(emoji => emoji.classList.remove('active'));
+            tweetInput.focus();
+        });
+
+        analyzeButton.addEventListener('click', analyzeTweet);
+        tweetInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                analyzeTweet();
+            }
+        });
+    </script>
+</body>
+</html>
